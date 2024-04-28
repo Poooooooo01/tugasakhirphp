@@ -1,19 +1,17 @@
 <?php
 include ("../layout/header.php");
 
-// Modifikasi SQL untuk mengganti 'done' dengan 'entry' pada saat pengambilan data
+// Modifikasi SQL untuk mengambil hanya data dengan status 'Entry'
 $sql = "
     SELECT r.id, r.receipt_date,
-           CASE 
-               WHEN r.status = 'done' THEN 'Entry'
-               ELSE r.status
-           END AS status,
+           'Entry' AS status,  -- Karena Anda hanya mengambil data dengan status 'Entry', Anda bisa mengatur nilai tetap untuk kolom status
            SUM(rd.amount * rd.price) AS total_price,
            r.customer_name,
            u.name AS user_name
     FROM receipts r
     LEFT JOIN receipt_details rd ON r.id = rd.receipt_id
     LEFT JOIN users u ON r.user_id = u.id 
+    WHERE r.status = 'Entry'
     GROUP BY r.id
     ORDER BY r.receipt_date";
 

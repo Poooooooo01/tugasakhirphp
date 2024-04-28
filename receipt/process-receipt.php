@@ -1,45 +1,47 @@
 <?php
-include("../config/database.php");
+include("../config/database.php"); // Inklusi koneksi database
+
+session_start(); // Mulai sesi
+
+// Pastikan koneksi database valid
+if (!isset($db) or $db->connect_error) {
+    die("Koneksi database tidak tersedia.");
+}
 
 if (isset($_POST['submit'])) {
-    $id = (int)$_POST['id'];
-    $customer_name = mysqli_real_escape_string($db, $_POST['customer_name']);
-    $receipt_date = mysqli_real_escape_string($db, $_POST['receipt_date']);
-    $user_id = (int)$_POST['user_id'];
-    $status = mysqli_real_escape_string($db, $_POST['status']);
-    $amount = (float)$_POST['amount'];
-    $price = (float)$_POST['price'];
-    $total_price = $amount * $price;
+    $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
+    $customer_name = isset($_POST['customer_name']) ? mysqli_real_escape_string($db, $_POST['customer_name']) : '';
+    $receipt_date = date('Y-m-d H:i:s'); // Tambahkan waktu
+    $user_id = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 0;
 
     try {
         if ($id > 0) {
-            // Update jika ID ada
-            $stmt = $db->prepare("UPDATE receipts SET customer_name = ?, receipt_date = ?, user_id = ?, status = ?, total_price = ? WHERE id = ?");
-            $stmt->bind_param("sssiid", $customer_name, $receipt_date, $user_id, $status, total_price, $id);
-
-            $stmt2 = $db->prepare("UPDATE receipt_details SET amount = ?, price = ? WHERE receipt_id = ?");
-            $stmt2->bind_param("idi", $amount, $price, $id);
-
+            // Jika ID ada, lakukan pembaruan
+            $stmt = $db->prepare("UPDATE receipts SET customer_name = ?, receipt_date = ?, user_id = ? WHERE id = ?");
+            $stmt->bind_param("sssi", $customer_name, $receipt_date, $user_id, $id);
         } else {
-            // Insert jika ID tidak ada
-            $stmt = $db->prepare("INSERT INTO receipts (customer_name, receipt_date, user_id, status, amount, price) VALUES (?, ?, ?, ?, ?, ?)");
-            $stmt->bind_param("sssif", $customer_name, $receipt_date, $user_id, $status, $amount, $price);
+            // Jika ID tidak ada, tambahkan data baru
+            $stmt = $db->prepare("INSERT INTO receipts (customer_name, receipt_date, user_id) VALUES (?, ?, ?)");
+            $stmt->bind_param("sss", $customer_name, $receipt_date, $user_id);
 
-            $stmt->execute(); // Jalankan statement pertama
+            $stmt->execute(); // Jalankan SQL
+            $receipt_id = $stmt->insert_id;
 
-            $receipt_id = $stmt->insert_id; // Dapatkan ID terbaru
-
-            $stmt2 = $db->prepare("INSERT INTO receipt_details (receipt_id, amount, price) VALUES (?, ?, ?)");
-            $stmt2->bind_param("iid", $receipt_id, $amount, $price);
+            // Mengarahkan ke form dengan ID yang baru
+            header("Location: form.php?id=$receipt_id");
+            exit(); // Keluar setelah arahan
         }
 
-        $stmt->execute();
-        $stmt2->execute();
-
+        $stmt->execute(); // Jalankan perintah SQL
         header("Location: index.php?success=Data berhasil disimpan");
+        exit(); // Keluar setelah arahan
     } catch (Exception $e) {
         header("Location: index.php?error=" . $e->getMessage());
+        exit(); // Keluar setelah arahan
     }
 } else {
+    // Jika tidak ada POST data, arahkan ke index
     header("Location: index.php?error=Invalid access");
+    exit(); // Keluar setelah arahan
 }
+?>
