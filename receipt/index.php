@@ -65,7 +65,6 @@ if (isset($_GET['success'])) {
                 <td><?= number_format($receipt["total_price"], 2); ?></td>
                 <td>
                     <div class="d-flex">
-                        <a href="form.php?id=<?= $receipt["id"]; ?>" class="btn btn-sm btn-warning me-2">Edit</a>
                         <form action="delete-process.php" method="post">
                             <input type="hidden" name="id" value="<?= $receipt["id"]; ?>">
                             <button type="submit" name="delete"
